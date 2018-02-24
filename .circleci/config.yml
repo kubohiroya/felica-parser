@@ -1,31 +1,8 @@
 version: 2
 jobs:
   build:
-    working_directory: ~/workspace
     docker:
-      - image: node:9
+      - image: circleci/ruby:2.4.1
     steps:
       - checkout
-      - restore_cache:
-          key: deps1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}
-      - run:
-        name: Build PDF
-        command: npm test
-      - run:
-        name: System information
-      - run:
-        name: System information
-        command: |
-          echo "Node $(node -v)"
-          echo "Yarn v$(yarn --version)"
-      - run:
-        name: Install dependencies
-        command: yarn
-      - run:
-        name: Test
-        command: yarn test
-      - save_cache:
-          key: projectname-{{ .Branch }}-{{ checksum "yarn.lock" }}
-          paths:
-            - ~/workspace/node_modules
-            - ~/.cache/yarn/
+      - run: echo "A first hello"
