@@ -1,8 +1,21 @@
 /* tslint:disable: no-bitwise */
-import { BlockElementAccessMode, FELICA_COMMAND, IServiceCode} from "./felica-cmd";
+import {
+  BlockElementAccessMode,
+  FELICA_COMMAND,
+  IRCPolling, IRCReadWithoutEncryption, IRCRequestResponce,
+  IRCRequestService, IRCRequestSystemCode, IRCSearchServiceCode, IRCWriteWithoutEncryption,
+  IServiceCode,
+} from "./felica-cmd";
 import Util from "./util";
 
 export default class FelicaPaser {
+  /**
+   * Felica Polling Command
+   * @param {number} systemCode
+   * @param {number} requestCode
+   * @param {number} timeSlot
+   * @returns {number[]}
+   */
   public static polling(systemCode: number, requestCode: number, timeSlot: number): number[] {
     return [
       FELICA_COMMAND.CC_POLLING,
@@ -13,6 +26,12 @@ export default class FelicaPaser {
     ];
   }
 
+  /**
+   * Felica RequestService Command
+   * @param {number[] | string} idm
+   * @param {number[]} nodes
+   * @returns {number[]}
+   */
   public static requestService(idm: number[] | string, nodes: number[]): number[] {
     const byteIdm = FelicaPaser.argIdm2ByteIdm(idm);
     const data = [
@@ -30,6 +49,11 @@ export default class FelicaPaser {
     return data;
   }
 
+  /**
+   * Felica RequestResponse Command
+   * @param {number[] | string} idm
+   * @returns {number[]}
+   */
   public static requestResponse(idm: number[] | string): number[] {
     const byteIdm = FelicaPaser.argIdm2ByteIdm(idm);
     return [
@@ -38,20 +62,14 @@ export default class FelicaPaser {
     ];
   }
 
-  public static makeBlockElement(
-    accessMode: BlockElementAccessMode, serviceCodeIndex: number, blockNum: number): number[] {
-    const data: number[] = [];
-    if (255 < blockNum) {
-      data.push(0b10000000 | (accessMode << 4) | serviceCodeIndex);
-      data.push(blockNum);
-    } else {
-      data.push(0b00000000 | (accessMode << 4) | serviceCodeIndex);
-      data.push(blockNum & 0xFF);
-      data.push((blockNum >>> 8) & 0xFF);
-    }
-    return data;
-  }
-
+  /**
+   * Felica ReadWithoutEncryption Command
+   * @param {number[] | string} idm
+   * @param {number[]} services
+   * @param {number[]} serviceCodeListOrderList
+   * @param {number[]} blockNumberList
+   * @returns {number[]}
+   */
   public static readWithoutEncryption(
     idm: number[] | string, services: number[],
     serviceCodeListOrderList: number[], blockNumberList: number[]): number[] {
@@ -78,6 +96,16 @@ export default class FelicaPaser {
     }
     return data;
   }
+
+  /**
+   * Felica WriteWithoutEncryption Command
+   * @param {number[]} idm
+   * @param {number[]} services
+   * @param {number[]} serviceCodeListOrderList
+   * @param {number[]} blockNumberList
+   * @param {number[][]} blockData
+   * @returns {number[]}
+   */
   public static writeWithoutEncryption(
     idm: number[], services: number[],
     serviceCodeListOrderList: number[], blockNumberList: number[], blockData: number[][]): number[] {
@@ -113,7 +141,13 @@ export default class FelicaPaser {
     return data;
   }
 
-  public static searchService(idm: number[] | string, idx: number): number[] {
+  /**
+   * Felica SearchServiceCode Command
+   * @param {number[] | string} idm
+   * @param {number} idx
+   * @returns {number[]}
+   */
+  public static searchServiceCode(idm: number[] | string, idx: number): number[] {
     const byteIdm = FelicaPaser.argIdm2ByteIdm(idm);
     return [
       FELICA_COMMAND.CC_SEARCH_SERVICE_CODE,
@@ -122,6 +156,12 @@ export default class FelicaPaser {
       (idx >>> 8) & 0xFF,
     ];
   }
+
+  /**
+   * Felica RequestSystemCode Command
+   * @param {number[] | string} idm
+   * @returns {number[]}
+   */
   public static requestSystemCode(idm: number[] | string): number[] {
     const byteIdm = FelicaPaser.argIdm2ByteIdm(idm);
     return [
@@ -129,6 +169,12 @@ export default class FelicaPaser {
       ...byteIdm,
     ];
   }
+
+  /**
+   * Parse ServiceCode
+   * @param {number} data
+   * @returns {IServiceCode}
+   */
   public static parseServiceCode(data: number): IServiceCode {
     return {
       serviceNumber: data & 0xFFC0 >>> 7,
@@ -136,60 +182,102 @@ export default class FelicaPaser {
     };
   }
 
-  public static parseRequest(data: number[]) {
-    const cmdCode = data[0];
-    switch (cmdCode) {
-      case FELICA_COMMAND.CC_POLLING:
-        break;
-      case FELICA_COMMAND.CC_REQUEST_SERVICE:
-        break;
-      case FELICA_COMMAND.CC_REQUEST_RESPONCE:
-        break;
-      case FELICA_COMMAND.CC_READ_WITHOUT_ENCRYPTION:
-        break;
-      case FELICA_COMMAND.CC_WRITE_WITHOUT_ENCRYPTION:
-        break;
-      case FELICA_COMMAND.CC_SEARCH_SERVICE_CODE:
-        break;
-      case FELICA_COMMAND.CC_REQUEST_SYSTEM_CODE:
-        break;
-      case FELICA_COMMAND.CC_AUTHENTICATION1:
-        break;
-      case FELICA_COMMAND.CC_AUTHENTICATION2:
-        break;
-      default:
-        break;
-    }
-  }
-
-  public static parseResponse(data: number[]) {
-    const cmdCode = data[0];
-    switch (cmdCode) {
+  /**
+   * Parse Felica Response Command
+   * @param {number[]} data
+   * @returns {IRCPolling | IRCRequestService | IRCRequestResponce | IRCReadWithoutEncryption |
+   * IRCWriteWithoutEncryption | IRCSearchServiceCode | IRCRequestSystemCode}
+   */
+  public static parseResponse(data: number[]): IRCPolling | IRCRequestService | IRCRequestResponce |
+    IRCReadWithoutEncryption | IRCWriteWithoutEncryption | IRCSearchServiceCode | IRCRequestSystemCode {
+    switch (data[0]) {
       case FELICA_COMMAND.RC_POLLING:
-        break;
+        const polling: IRCPolling = {
+          responseCode: data[0],
+          idm: data.slice(1, 9),
+          pmm: data.slice(9, 17),
+          requestData: (data[17] << 8) | data[18],
+        };
+        return polling;
       case FELICA_COMMAND.RC_REQUEST_SERVICE:
-        break;
+        const requestService: IRCRequestService = {
+          responseCode: data[0],
+          idm: data.slice(1, 9),
+          numberOfNode: data[10],
+          nodeKeyVersionList: [],
+        };
+        for (let i = 0; i < requestService.numberOfNode; i++) {
+          requestService.nodeKeyVersionList.push((data[12 + i * 2] << 8) | (data[11 + i * 2]));
+        }
+        return requestService;
       case FELICA_COMMAND.RC_REQUEST_RESPONCE:
-        break;
+        const requestResponce: IRCRequestResponce = {
+          responseCode: data[0],
+          idm: data.slice(1, 9),
+          mode: data[10],
+        };
+        return requestResponce;
       case FELICA_COMMAND.RC_READ_WITHOUT_ENCRYPTION:
-        break;
+        const readWithoutEncryption: IRCReadWithoutEncryption = {
+          responseCode: data[0],
+          idm: data.slice(1, 9),
+          statusFlag1: data[9],
+          statusFlag2: data[10],
+          numberOfBlock: 0,
+          blockData: [],
+        };
+        if (readWithoutEncryption.statusFlag1 === 0x00) {
+          readWithoutEncryption.numberOfBlock = data[11];
+          for (let i = 0; i < readWithoutEncryption.numberOfBlock; i++) {
+            readWithoutEncryption.blockData.push([]);
+            for (let j = 0; j < 16; j++) {
+              readWithoutEncryption.blockData[i].push(data[12 + 16 * i + j]);
+            }
+          }
+        }
+        return readWithoutEncryption;
       case FELICA_COMMAND.RC_WRITE_WITHOUT_ENCRYPTION:
-        break;
+        const writeWithoutEncryption: IRCWriteWithoutEncryption = {
+          responseCode: data[0],
+          idm: data.slice(1, 9),
+          statusFlag1: data[9],
+          statusFlag2: data[10],
+        };
+        return writeWithoutEncryption;
       case FELICA_COMMAND.RC_SEARCH_SERVICE_CODE:
-        break;
+        const searchServiceCode: IRCSearchServiceCode = {
+          responseCode: data[0],
+          idm: data.slice(1, 9),
+        };
+        const temp = (data[10] << 8) | data[9];
+        if ((temp & 0x3E) === 0) {
+          searchServiceCode.areaStart = temp;
+          searchServiceCode.areaEnd = (data[12] << 8) | data[11];
+        } else {
+          searchServiceCode.serviceCode = temp;
+        }
+        return searchServiceCode;
       case FELICA_COMMAND.RC_REQUEST_SYSTEM_CODE:
-        break;
-      case FELICA_COMMAND.RC_AUTHENTICATION1:
-        break;
-      case FELICA_COMMAND.RC_AUTHENTICATION2:
-        break;
-      case FELICA_COMMAND.RC_READ:
-        break;
+        const requestSystemCode: IRCRequestSystemCode = {
+          responseCode: data[0],
+          idm: data.slice(1, 9),
+          numberOfSystemCode: data[9],
+          systemCodeList: [],
+        };
+        for (let i = 0; i < requestSystemCode.numberOfSystemCode; i++) {
+          requestSystemCode.systemCodeList.push((data[11 + i * 2] << 8) | data[12 + i * 2]);
+        }
+        return requestSystemCode;
       default:
-        break;
+        throw new Error("unknown format data");
     }
   }
 
+  /**
+   * Convert string IDm to byte array
+   * @param {number[] | string} idm
+   * @returns {number[]}
+   */
   private static argIdm2ByteIdm(idm: number[] | string): number[] {
     let byteIdm: number[] = [];
     if (Array.isArray(idm)) {
@@ -198,5 +286,26 @@ export default class FelicaPaser {
       byteIdm = Util.stringHex2Byte(idm);
     }
     return byteIdm;
+  }
+
+  /**
+   * Make byte array of Block Element
+   * @param {BlockElementAccessMode} accessMode
+   * @param {number} serviceCodeIndex
+   * @param {number} blockNum
+   * @returns {number[]}
+   */
+  private static makeBlockElement(
+    accessMode: BlockElementAccessMode, serviceCodeIndex: number, blockNum: number): number[] {
+    const data: number[] = [];
+    if (255 < blockNum) {
+      data.push(0b10000000 | (accessMode << 4) | serviceCodeIndex);
+      data.push(blockNum);
+    } else {
+      data.push(0b00000000 | (accessMode << 4) | serviceCodeIndex);
+      data.push(blockNum & 0xFF);
+      data.push((blockNum >>> 8) & 0xFF);
+    }
+    return data;
   }
 }

@@ -109,7 +109,7 @@ export interface ICCRequestResponce {
 export interface IRCRequestResponce {
     responseCode: FELICA_COMMAND.RC_REQUEST_RESPONCE;
     idm: number[];
-    mode: 0x01 | 0x01 | 0x02 | 0x03;
+    mode: number;
 }
 export interface IByteBlockElement {
     length: number;
@@ -137,7 +137,7 @@ export interface IRCReadWithoutEncryption {
     statusFlag1: number;
     statusFlag2: number;
     numberOfBlock: number;
-    blockData: number[];
+    blockData: number[][];
 }
 export interface ICCWriteWithoutEncryption {
     commandCode: FELICA_COMMAND.CC_WRITE_WITHOUT_ENCRYPTION;
@@ -152,6 +152,18 @@ export interface IRCWriteWithoutEncryption {
     idm: number[];
     statusFlag1: number;
     statusFlag2: number;
+}
+export interface ICCSearchServiceCode {
+    commandCode: FELICA_COMMAND.CC_SEARCH_SERVICE_CODE;
+    idm: number[];
+    idx: number;
+}
+export interface IRCSearchServiceCode {
+    responseCode: FELICA_COMMAND.RC_SEARCH_SERVICE_CODE;
+    idm: number[];
+    areaStart?: number;
+    areaEnd?: number;
+    serviceCode?: number;
 }
 export interface ICCRequestSystemCode {
     commandCode: FELICA_COMMAND.CC_REQUEST_SYSTEM_CODE;
