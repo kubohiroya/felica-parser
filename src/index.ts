@@ -6,8 +6,15 @@ import {
   IRCRequestService, IRCRequestSystemCode, IRCSearchServiceCode, IRCWriteWithoutEncryption,
   IServiceCode,
 } from "./felica-cmd";
+export {
+  BlockElementAccessMode,
+  FELICA_COMMAND,
+  IRCPolling, IRCReadWithoutEncryption, IRCRequestResponce,
+  IRCRequestService, IRCRequestSystemCode, IRCSearchServiceCode, IRCWriteWithoutEncryption,
+  IServiceCode,
+};
 import Util from "./util";
-
+export { Util };
 export default class FelicaPaser {
   /**
    * Felica Polling Command
