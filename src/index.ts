@@ -72,78 +72,93 @@ export default class FelicaPaser {
   /**
    * Felica ReadWithoutEncryption Command
    * @param {number[] | string} idm
-   * @param {number[]} services
-   * @param {number[]} serviceCodeListOrderList
+   * @param {number} accessCode
+   * @param {number[]} serviceCodeList
+   * @param {number[]} serviceCodeListOrder
    * @param {number[]} blockNumberList
    * @returns {number[]}
    */
   public static readWithoutEncryption(
-    idm: number[] | string, services: number[],
-    serviceCodeListOrderList: number[], blockNumberList: number[]): number[] {
+    idm: number[] | string,
+    accessMode: number,
+    serviceCodeList: number[],
+    serviceCodeListOrder: number[],
+    blockNumberList: number[]): number[] {
     const byteIdm = FelicaPaser.argIdm2ByteIdm(idm);
     const data = [
       FELICA_COMMAND.CC_READ_WITHOUT_ENCRYPTION,
       ...byteIdm,
     ];
-    data.push(services.length);
-    for (const service of services) {
-      data.push(service & 0xFF);
-      data.push((service >>> 8) & 0xFF);
+    data.push(serviceCodeList.length);
+    for (const serviceCode of serviceCodeList) {
+      data.push(serviceCode & 0xFF);
+      data.push((serviceCode >>> 8) & 0xFF);
     }
-    if (serviceCodeListOrderList.length !== blockNumberList.length) {
-      throw new Error("The number of serviceCodeListOrderList does not match the number of blockNumberList");
+    if (serviceCodeListOrder.length !== blockNumberList.length) {
+      throw new Error("The number of serviceCodeListOrder does not match the number of blockNumberList");
     }
-    data.push(serviceCodeListOrderList.length);
+    data.push(serviceCodeListOrder.length);
     for (let i = 0; i < blockNumberList.length; i++) {
       const blockElement = FelicaPaser.makeBlockElement(
-        BlockElementAccessMode.NOT_CASHBACK_ACCESS_TO_PURSE_SERVICE,
-        serviceCodeListOrderList[i],
+        accessMode, // BlockElementAccessMode.NOT_CASHBACK_ACCESS_TO_PURSE_SERVICE,
+        serviceCodeListOrder[i],
         blockNumberList[i]);
       data.push(...blockElement);
+    }
+    data.push(blockNumberList.length);
+    for (const blockNumber of blockNumberList) {
+      data.push(blockNumber);
     }
     return data;
   }
 
   /**
    * Felica WriteWithoutEncryption Command
-   * @param {number[]} idm
-   * @param {number[]} services
-   * @param {number[]} serviceCodeListOrderList
+   * @param {number[] | string} idm
+   * @param {number} accessMode
+   * @param {number[]} serviceCodeList
+   * @param {number[]} serviceCodeListOrder
    * @param {number[]} blockNumberList
    * @param {number[][]} blockData
    * @returns {number[]}
    */
   public static writeWithoutEncryption(
-    idm: number[], services: number[],
-    serviceCodeListOrderList: number[], blockNumberList: number[], blockData: number[][]): number[] {
+    idm: number[] | string,
+    accessMode: number,
+    serviceCodeList: number[],
+    serviceCodeListOrder: number[],
+    blockNumberList: number[],
+    blockData: number[][]): number[] {
     const byteIdm = FelicaPaser.argIdm2ByteIdm(idm);
     const data = [
-      FELICA_COMMAND.CC_READ_WITHOUT_ENCRYPTION,
+      FELICA_COMMAND.CC_WRITE_WITHOUT_ENCRYPTION,
       ...byteIdm,
     ];
-    data.push(services.length);
-    for (const service of services) {
-      data.push(service & 0xFF);
-      data.push((service >>> 8) & 0xFF);
+    data.push(serviceCodeList.length);
+    for (const serviceCode of serviceCodeList) {
+      data.push(serviceCode & 0xFF);
+      data.push((serviceCode >>> 8) & 0xFF);
     }
-    if (serviceCodeListOrderList.length !== blockNumberList.length) {
-      throw new Error("The number of serviceCodeListOrderList does not match the number of blockNumberList");
+    if (serviceCodeListOrder.length !== blockNumberList.length) {
+      throw new Error("The number of serviceCodeListOrder does not match the number of blockNumberList");
     }
-    if (serviceCodeListOrderList.length !== blockData.length) {
-      throw new Error("The number of serviceCodeListOrderList does not match the number of blockData");
+    if (serviceCodeListOrder.length !== blockData.length) {
+      throw new Error("The number of serviceCodeListOrder does not match the number of blockData");
     }
-    data.push(serviceCodeListOrderList.length);
+    if (blockNumberList.length !== blockData.length) {
+      throw new Error("The number of blockNumberList does not match the number of blockData");
+    }
     for (let i = 0; i < blockNumberList.length; i++) {
       const blockElement = FelicaPaser.makeBlockElement(
-        BlockElementAccessMode.NOT_CASHBACK_ACCESS_TO_PURSE_SERVICE,
-        serviceCodeListOrderList[i],
+        accessMode, // BlockElementAccessMode.NOT_CASHBACK_ACCESS_TO_PURSE_SERVICE,
+        serviceCodeListOrder[i],
         blockNumberList[i]);
       for (const blockValue of blockElement) {
         data.push(blockValue);
       }
     }
-    for (const oneLineData of blockData) {
-      data.push(...oneLineData);
+    for (const blockValue of blockData) {
+      data.push(...blockValue);
     }
     return data;
   }

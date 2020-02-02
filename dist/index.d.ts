@@ -42,7 +42,7 @@ export default class FelicaPaser {
      * @param {number[][]} blockData
      * @returns {number[]}
      */
-    static writeWithoutEncryption(idm: number[], services: number[], serviceCodeListOrderList: number[], blockNumberList: number[], blockData: number[][]): number[];
+    static writeWithoutEncryption(idm: number[] | number, services: number[], serviceCodeListOrderList: number[], blockNumberList: number[], blockData: number[][]): number[];
     /**
      * Felica SearchServiceCode Command
      * @param {number[] | string} idm
