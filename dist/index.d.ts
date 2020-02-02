@@ -35,14 +35,14 @@ export default class FelicaPaser {
     static readWithoutEncryption(idm: number[] | string, services: number[], serviceCodeListOrderList: number[], blockNumberList: number[]): number[];
     /**
      * Felica WriteWithoutEncryption Command
-     * @param {number[]} idm
+     * @param {number[] | string} idm
      * @param {number[]} services
      * @param {number[]} serviceCodeListOrderList
      * @param {number[]} blockNumberList
      * @param {number[][]} blockData
      * @returns {number[]}
      */
-    static writeWithoutEncryption(idm: number[] | number, services: number[], serviceCodeListOrderList: number[], blockNumberList: number[], blockData: number[][]): number[];
+    static writeWithoutEncryption(idm: number[] | string, services: number[], serviceCodeListOrderList: number[], blockNumberList: number[], blockData: number[][]): number[];
     /**
      * Felica SearchServiceCode Command
      * @param {number[] | string} idm
